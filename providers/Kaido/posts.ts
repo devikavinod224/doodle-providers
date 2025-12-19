@@ -1,7 +1,7 @@
 import { Post, ProviderContext } from "../types";
 
 const defaultHeaders = {
-  Referer: "https://toonstream.one",
+  Referer: "https://kaido.to",
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -26,7 +26,6 @@ export function getPosts({
   return fetchPosts({
     filter,
     page,
-    query: "",
     signal,
     providerContext,
   });
@@ -71,26 +70,19 @@ function fetchPosts({
   providerContext: ProviderContext;
 }): Promise<Post[]> {
   const { axios, cheerio } = providerContext;
-  const baseUrl = "https://toonstream.one";
+  const baseUrl = "https://kaido.to";
 
   let url = baseUrl;
 
   // --------------------------------------------------
-  // URL BUILD
+  // ✅ URL BUILD (FIXED FOR KAIDO)
   // --------------------------------------------------
   if (query && query.trim()) {
-    // Search uses /home/?s=searchQuery
-    const searchStr = encodeURIComponent(query.trim());
-    url = `${baseUrl}/home/?s=${searchStr}`;
-
-    // pagination on search pages
-    if (page > 1) {
-      url += `&paged=${page}`;
-    }
+    const q = encodeURIComponent(query.trim());
+    url = `${baseUrl}/search?keyword=${q}`;
+    if (page > 1) url += `&page=${page}`;
   } else if (filter) {
-    const clean = filter.startsWith("/")
-      ? filter.replace(/\/$/, "")
-      : `/${filter}`;
+    const clean = filter.startsWith("/") ? filter : `/${filter}`;
     url = `${baseUrl}${clean}${page > 1 ? `/page/${page}` : ""}`;
   } else {
     url = `${baseUrl}${page > 1 ? `/page/${page}` : ""}`;
@@ -107,38 +99,32 @@ function fetchPosts({
         href?.startsWith("http") ? href : new URL(href, baseUrl).href;
 
       // --------------------------------------------------
-      // 🔥 MAIN POST SELECTOR (SEARCH + NORMAL)
+      // ✅ KAIDO RESULT PARSER
       // --------------------------------------------------
-      $("ul.post-lst > li").each((_, el) => {
-        const li = $(el);
+      $(".flw-item").each((_, el) => {
+        const item = $(el);
 
-        // ---------------------------
         // LINK
-        // ---------------------------
-        let link = li.find("a.lnk-blk").attr("href") || "";
-        if (!link) return;
+        let link =
+          item.find("a.film-poster-ahref").attr("href") ||
+          item.find(".film-name a").attr("href") ||
+          "";
 
+        if (!link) return;
         link = resolveUrl(link);
         if (seen.has(link)) return;
 
-        // ---------------------------
         // TITLE
-        // ---------------------------
-        let title =
-          li.find("h2.entry-title").text().trim() ||
-          li.find("img").attr("alt")?.trim() ||
-          "";
+        const title =
+          item.find(".film-name a").text().trim() ||
+          item.find("img").attr("alt")?.trim();
 
         if (!title) return;
 
-        title = title.replace(/^Image\s+/i, "").trim();
-
-        // ---------------------------
         // IMAGE
-        // ---------------------------
         let img =
-          li.find("img").attr("data-src") ||
-          li.find("img").attr("src") ||
+          item.find("img").attr("data-src") ||
+          item.find("img").attr("src") ||
           "";
 
         if (img.startsWith("//")) img = "https:" + img;
@@ -156,7 +142,7 @@ function fetchPosts({
       return posts.slice(0, 100);
     })
     .catch((err: any) => {
-      console.error("ToonStream search/posts error:", err?.message || err);
+      console.error("Kaido posts/search error:", err?.message || err);
       return [];
     });
 }
