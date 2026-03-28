@@ -17,7 +17,7 @@
     "type": "global",
     "category": "movie/tv",
     "disabled": false,
-    "sourceUrl": "https://vegamovies-nl.my"
+    "sourceUrl": "https://mkvmovies.xyz"
   },
   {
     "display_name": "Netflix",
@@ -797,7 +797,7 @@
     "type": "france",
     "category": "movie/tvshow",
     "disabled": false,
-    "sourceUrl": "https://coflix.rodeo"
+    "sourceUrl": "https://coflix.wales"
   },
   {
     "display_name": "Cinestream",
